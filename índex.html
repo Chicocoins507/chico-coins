@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#10251e">
+<title>Chico Coins — Controle Financeiro</title>
+<style>
+:root{color-scheme:dark;--bg:#09120f;--panel:#14231d;--panel2:#1b3027;--green:#70e0a0;--text:#f3f8f4;--muted:#a6b8ae;--line:#2a4136;--red:#ff9a9a}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(160deg,#10251e,#09100e 70%);color:var(--text);font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+.app{max-width:920px;margin:auto;padding:16px;min-height:100vh}
+header{display:flex;align-items:center;gap:12px;padding:12px 0 18px;border-bottom:1px solid var(--line);margin-bottom:16px}
+.logo{width:48px;height:48px;border-radius:16px;background:var(--green);color:#0b2116;display:grid;place-items:center;font-size:25px;font-weight:900}
+h1{font-size:22px;margin:0}
+.sub,.muted{color:var(--muted);font-size:12px;line-height:1.5}
+.pill{margin-left:auto;border:1px solid #42614f;color:var(--green);border-radius:99px;padding:7px 10px;font-size:11px}
+nav{display:flex;gap:8px;overflow:auto;padding-bottom:12px}
+nav button,.btn{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:12px;padding:10px 13px;font-weight:650;cursor:pointer}
+nav button.active,.primary{background:var(--green);color:#082015;border-color:var(--green)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:15px;margin-bottom:12px}
+.card h2{font-size:16px;margin:0 0 12px}
+.big{font-size:23px;font-weight:800;margin-top:6px;overflow-wrap:anywhere}
+.green{color:var(--green)}.red,.danger{color:var(--red)}
+label{display:block;font-size:12px;color:var(--muted);margin:10px 0 5px}
+input,select{width:100%;padding:12px;border-radius:11px;border:1px solid var(--line);background:#0c1913;color:var(--text);font:inherit}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.btn{font-size:13px}.primary{font-weight:800}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{background:#0c1913;border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;gap:10px;justify-content:space-between;align-items:flex-start}
+.item strong{display:block}.item small{color:var(--muted);display:block;margin-top:4px}
+.item .amount{font-weight:800;white-space:nowrap}
+.empty{padding:15px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}
+.chatlog{height:300px;overflow:auto;display:flex;flex-direction:column;gap:9px;padding:10px;background:#0c1913;border-radius:12px}
+.bubble{padding:10px 12px;border-radius:13px;white-space:pre-wrap;max-width:94%;line-height:1.45}
+.bot{background:var(--panel2);align-self:flex-start}.user{background:#28553e;align-self:flex-end}
+.tab{display:none}.tab.show{display:block}
+@media(min-width:720px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}.layout{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}.layout>.card{margin-bottom:0}}
+@media(max-width:480px){.row{grid-template-columns:1fr}.pill{font-size:10px}.app{padding:12px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+<div class="logo">₵</div>
+<div><h1>Chico Coins</h1><div class="sub">Seu controle financeiro pessoal</div></div>
+<div class="pill">VERSÃO LOCAL</div>
+</header>
+
+<nav id="nav">
+<button class="active" data-tab="inicio">🏠 Resumo</button>
+<button data-tab="lancamentos">➕ Lançamentos</button>
+<button data-tab="dividas">🧾 Dívidas</button>
+<button data-tab="emprestimos">🤝 Empréstimos</button>
+<button data-tab="metas">🎯 Metas</button>
+<button data-tab="assistente">💬 Assistente</button>
+<button data-tab="dados">💾 Backup</button>
+</nav>
+
+<section class="tab show" id="inicio">
+<div class="grid">
+<div class="card"><div class="muted">Saldo calculado</div><div class="big green" id="saldo">R$ 0,00</div><div class="muted">Entradas menos gastos</div></div>
+<div class="card"><div class="muted">Entradas neste mês</div><div class="big" id="entradas">R$ 0,00</div></div>
+<div class="card"><div class="muted">Gastos neste mês</div><div class="big red" id="gastos">R$ 0,00</div></div>
+<div class="card"><div class="muted">Dívidas pendentes</div><div class="big" id="totalDividas">R$ 0,00</div></div>
+</div>
+<div class="layout">
+<div class="card"><h2>Últimas movimentações</h2><div id="ultimas" class="list"></div></div>
+<div class="card"><h2>Resumo rápido</h2><p id="resumo" class="muted">Registre sua primeira movimentação.</p><div class="actions"><button class="btn primary" data-go="lancamentos">Registrar entrada ou gasto</button><button class="btn" data-go="dividas">Anotar dívida</button></div></div>
+</div>
+</section>
+
+<section class="tab" id="lancamentos">
+<div class="layout">
+<div class="card"><h2>Novo lançamento</h2><form id="formLanc">
+<label>Tipo</label><select id="tipo"><option value="entrada">Dinheiro recebido</option><option value="gasto">Gasto / conta paga</option></select>
+<label>Valor (R$)</label><input id="valor" type="number" min="0.01" step="0.01" required placeholder="Ex.: 125.50">
+<label>Categoria</label><select id="categoria"><option>Casa</option><option>Alimentação</option><option>Transporte</option><option>Saúde</option><option>Trabalho</option><option>Lazer</option><option>Salário</option><option>Vendas</option><option>Outros</option></select>
+<label>Descrição</label><input id="descricao" maxlength="120" placeholder="Ex.: mercado, salário, conta de luz">
+<label>Data</label><input id="dataLanc" type="date" required>
+<div class="actions"><button class="btn primary" type="submit">Salvar lançamento</button></div>
+</form></div>
+<div class="card"><h2>Histórico completo</h2><div id="historico" class="list"></div><div class="actions"><button class="btn" id="csv">Exportar histórico CSV</button></div></div>
+</div>
+</section>
+
+<section class="tab" id="dividas">
+<div class="layout">
+<div class="card"><h2>Registrar dívida ou conta a pagar</h2><form id="formDivida">
+<label>Nome / descrição</label><input id="divNome" required maxlength="120" placeholder="Ex.: conta de energia">
+<div class="row"><div><label>Valor (R$)</label><input id="divValor" type="number" min="0.01" step="0.01" required></div><div><label>Vencimento</label><input id="divVenc" type="date"></div></div>
+<label>Para quem devo? (opcional)</label><input id="divPessoa" maxlength="100" placeholder="Pessoa ou empresa">
+<div class="actions"><button class="btn primary" type="submit">Salvar dívida</button></div>
+</form></div>
+<div class="card"><h2>Dívidas em aberto</h2><div id="listaDividas" class="list"></div></div>
+</div>
+</section>
+
+<section class="tab" id="emprestimos">
+<div class="layout">
+<div class="card"><h2>Dinheiro emprestado</h2><form id="formEmp">
+<label>Tipo</label><select id="empTipo"><option value="receber">Emprestei dinheiro (tenho a receber)</option><option value="pagar">Peguei dinheiro emprestado (tenho a pagar)</option></select>
+<label>Nome da pessoa</label><input id="empPessoa" required maxlength="100" placeholder="Nome">
+<div class="row"><div><label>Valor (R$)</label><input id="empValor" type="number" min="0.01" step="0.01" required></div><div><label>Data combinada</label><input id="empVenc" type="date"></div></div>
+<label>Observação</label><input id="empObs" maxlength="160" placeholder="Ex.: pagará em duas partes">
+<div class="actions"><button class="btn primary" type="submit">Registrar empréstimo</button></div>
+</form></div>
+<div class="card"><h2>Empréstimos pendentes</h2><div id="listaEmp" class="list"></div></div>
+</div>
+</section>
+
+<section class="tab" id="metas">
+<div class="layout">
+<div class="card"><h2>Criar meta de economia</h2><form id="formMeta">
+<label>Nome da meta</label><input id="metaNome" required maxlength="100" placeholder="Ex.: comprar computador">
+<div class="row"><div><label>Valor desejado (R$)</label><input id="metaAlvo" type="number" min="0.01" step="0.01" required></div><div><label>Já guardei (R$)</label><input id="metaAtual" type="number" min="0" step="0.01" value="0"></div></div>
+<label>Prazo</label><input id="metaPrazo" type="date">
+<div class="actions"><button class="btn primary" type="submit">Criar meta</button></div>
+</form></div>
+<div class="card"><h2>Minhas metas</h2><div id="listaMetas" class="list"></div></div>
+</div>
+</section>
+
+<section class="tab" id="assistente">
+<div class="card"><h2>Assistente financeiro</h2>
+<p class="muted">Este assistente consulta os dados salvos neste navegador. Ainda não é uma IA conectada ao ChatGPT.</p>
+<div class="chatlog" id="chat"><div class="bubble bot">Olá! Pergunte “meu saldo”, “quanto gastei”, “minhas dívidas” ou “quanto tenho a receber”.</div></div>
+<form id="formChat" class="row" style="margin-top:10px"><input id="chatInput" placeholder="Digite sua pergunta..." aria-label="Pergunta ao assistente"><button class="btn primary" type="submit">Enviar</button></form>
+<div class="actions"><button class="btn" data-ask="meu saldo">Meu saldo</button><button class="btn" data-ask="quanto gastei">Gastos do mês</button><button class="btn" data-ask="minhas dívidas">Minhas dívidas</button><button class="btn" data-ask="quanto tenho a receber">Tenho a receber</button></div>
+</div>
+</section>
+
+<section class="tab" id="dados">
+<div class="card"><h2>Backup e restauração</h2><p class="muted">Exporte uma cópia dos seus dados para guardar. Para recuperar, selecione um backup criado por este app.</p>
+<div class="actions"><button class="btn primary" id="backup">Baixar backup JSON</button><label class="btn" style="display:inline-flex;align-items:center">Restaurar backup<input id="restore" type="file" accept="application/json,.json" style="display:none"></label><button class="btn danger" id="limpar">Apagar todos os dados</button></div>
+<p class="muted">Os dados ficam apenas neste navegador/aparelho. Limpar dados do navegador pode apagá-los; faça backup regularmente.</p>
+</div>
+</section>
+
+<div class="muted" style="text-align:center;padding:18px 0">Chico Coins • Controle local • Faça backup regularmente.</div>
+</div>
+
+<script>
+const KEY='chico-coins-completo-v2';
+const $=id=>document.getElementById(id);
+const brl=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const today=()=>new Date().toISOString().slice(0,10);
+let db={transactions:[],debts:[],loans:[],goals:[]};
+try{const x=JSON.parse(localStorage.getItem(KEY));if(x&&typeof x==='object')db={...db,...x}}catch(e){}
+function save(){localStorage.setItem(KEY,JSON.stringify(db));render()}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function showTab(id){document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('show',x.id===id));document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x.dataset.tab===id))}
+$('nav').addEventListener('click',e=>{const b=e.target.closest('button[data-tab]');if(b)showTab(b.dataset.tab)});
+document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g)showTab(g.dataset.go);const a=e.target.closest('[data-ask]');if(a){showTab('assistente');ask(a.dataset.ask)}});
+function item(title,detail,amount,actions=''){return `<div class="item"><div><strong>${esc(title)}</strong><small>${esc(detail)}</small>${actions?`<div class="actions">${actions}</div>`:''}</div><div class="amount">${esc(amount)}</div></div>`}
+function action(id,label,cls=''){return `<button class="btn ${cls}" data-action="${id}">${label}</button>`}
+
+function render(){
+ const now=new Date(),tx=db.transactions||[],month=tx.filter(t=>{const d=new Date(t.date+'T12:00:00');return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()});
+ const income=tx.filter(t=>t.type==='entrada').reduce((s,t)=>s+t.amount,0),expenses=tx.filter(t=>t.type==='gasto').reduce((s,t)=>s+t.amount,0);
+ const monthIn=month.filter(t=>t.type==='entrada').reduce((s,t)=>s+t.amount,0),monthOut=month.filter(t=>t.type==='gasto').reduce((s,t)=>s+t.amount,0);
+ $('saldo').textContent=brl(income-expenses);$('entradas').textContent=brl(monthIn);$('gastos').textContent=brl(monthOut);
+ $('totalDividas').textContent=brl((db.debts||[]).filter(d=>!d.paid).reduce((s,d)=>s+d.amount,0)+(db.loans||[]).filter(l=>l.type==='pagar'&&!l.paid).reduce((s,l)=>s+l.amount,0));
+ const last=[...tx].sort((a,b)=>b.created-a.created).slice(0,6);
+ $('ultimas').innerHTML=last.length?last.map(t=>item(t.description||t.category,t.date+' · '+t.category,(t.type==='entrada'?'+ ':'− ')+brl(t.amount))).join(''):'<div class="empty">Nenhuma movimentação registrada.</div>';
+ $('historico').innerHTML=[...tx].sort((a,b)=>b.created-a.created).map(t=>item(t.description||t.category,t.date+' · '+t.category,(t.type==='entrada'?'+ ':'− ')+brl(t.amount),action('del-tx-'+t.id,'Excluir','danger'))).join('')||'<div class="empty">Seu histórico aparecerá aqui.</div>';
+ $('listaDividas').innerHTML=(db.debts||[]).map(d=>item(d.name,(d.person?'Para: '+d.person+' · ':'')+(d.due?'Vence: '+d.due+' · ':'')+(d.paid?'Paga':'Pendente'),brl(d.amount),d.paid?'':action('paid-debt-'+d.id,'Marcar como paga','primary')+' '+action('del-debt-'+d.id,'Excluir','danger'))).join('')||'<div class="empty">Nenhuma dívida cadastrada.</div>';
+ $('listaEmp').innerHTML=(db.loans||[]).map(l=>item((l.type==='receber'?'A receber de ':'A pagar para ')+l.person,(l.due?'Data combinada: '+l.due+' · ':'')+(l.note?l.note+' · ':'')+(l.paid?'Quitado':'Pendente'),brl(l.amount),l.paid?'':action('paid-loan-'+l.id,'Marcar como recebido/pago','primary')+' '+action('del-loan-'+l.id,'Excluir','danger'))).join('')||'<div class="empty">Nenhum empréstimo registrado.</div>';
+ $('listaMetas').innerHTML=(db.goals||[]).map(g=>{let
