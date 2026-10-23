@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#10251e">
+<title>Chico Coins</title>
+<style>
+:root{--bg:#0b1512;--panel:#14231d;--panel2:#1b3027;--green:#70e0a0;--text:#f3f8f4;--muted:#a6b8ae;--line:#2a4136}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#10251e,#09100e 70%);color:var(--text);font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+.app{max-width:720px;margin:auto;min-height:100vh;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 14px env(safe-area-inset-bottom)}
+header{display:flex;align-items:center;gap:12px;padding:20px 4px 14px;border-bottom:1px solid var(--line)}
+.logo{width:44px;height:44px;border-radius:15px;background:var(--green);color:#0b2116;display:grid;place-items:center;font-size:24px;font-weight:900}
+h1{font-size:20px;margin:0} .subtitle{font-size:12px;color:var(--muted);margin-top:4px}
+.status{margin-left:auto;border:1px solid #42614f;color:var(--green);border-radius:99px;padding:6px 9px;font-size:11px}
+.chat{flex:1;padding:18px 0;display:flex;flex-direction:column;gap:12px}
+.welcome{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:18px;line-height:1.5}
+.welcome strong{color:var(--green)}.hint{color:var(--muted);font-size:13px}
+.message{max-width:90%;padding:12px 14px;border-radius:17px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+.user{align-self:flex-end;background:#28553e;border-bottom-right-radius:5px}
+.bot{align-self:flex-start;background:var(--panel2);border:1px solid var(--line);border-bottom-left-radius:5px}
+.quick{display:flex;gap:8px;overflow-x:auto;padding:0 0 12px}
+.quick button{white-space:nowrap;border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:99px;padding:9px 12px}
+.composer{display:flex;gap:8px;padding:10px 0 14px;position:sticky;bottom:0;background:linear-gradient(transparent,var(--bg) 20%)}
+input{min-width:0;flex:1;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;color:var(--text);font-size:16px;outline:none}
+input:focus{border-color:var(--green)}.send{border:0;border-radius:15px;background:var(--green);color:#082015;font-weight:800;padding:0 17px}
+footer{font-size:11px;color:var(--muted);text-align:center;padding:0 0 12px}
+a{color:var(--green)}
+</style>
+</head>
+<body><div class="app">
+<header><div class="logo">₵</div><div><h1>Chico Coins</h1><div class="subtitle">Seu assistente financeiro pessoal</div></div><div class="status">MODO INICIAL</div></header>
+<main class="chat" id="chat" aria-live="polite">
+<div class="welcome"><strong>Oi! Eu sou o Chico Coins. 💚</strong><br>Me conte seus gastos e recebimentos com palavras simples.<br><span class="hint">Exemplos: “gastei 30 no mercado”, “recebi 200”, “anota dívida de 150 para dia 10”.</span></div>
+<div class="message bot">Esta é a primeira versão funcional: ela registra lançamentos neste navegador e mostra relatórios quando você pedir. A IA conectada de verdade será uma etapa posterior.</div>
+</main>
+<div class="quick">
+<button onclick="quick('Mostrar meu saldo')">💰 Meu saldo</button>
+<button onclick="quick('Mostrar relatório do mês')">📊 Relatório</button>
+<button onclick="quick('Mostrar minhas dívidas')">🧾 Dívidas</button>
+<button onclick="quick('Mostrar histórico')">🗂 Histórico</button>
+</div>
+<form class="composer" id="form"><input id="entry" autocomplete="off" placeholder="Escreva aqui..." aria-label="Mensagem para Chico Coins"><button class="send" type="submit">Enviar</button></form>
+<footer>Os dados ficam salvos neste navegador. Esta versão ainda não sincroniza entre aparelhos.</footer>
+</div>
+<script>
+const KEY='chico-coins-v1';
+let data;
+try{data=JSON.parse(localStorage.getItem(KEY))||{balance:0,transactions:[],debts:[]}}catch(e){data={balance:0,transactions:[],debts:[]}}
+const chat=document.getElementById('chat'), input=document.getElementById('entry');
+const money=n=>n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+function save(){localStorage.setItem(KEY,JSON.stringify(data))}
+function say(text,who='bot'){const el=document.createElement('div');el.className='message '+who;el.textContent=text;chat.appendChild(el);el.scrollIntoView({behavior:'smooth',block:'end'})}
+function quick(t){input.value=t;document.getElementById('form').requestSubmit()}
+function report(){if(!data.transactions.length)return 'Ainda não há lançamentos. Você pode escrever, por exemplo: “gastei 30 no mercado”.';let now=new Date(),month=data.transactions.filter(t=>{let d=new Date(t.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()});let inc=month.filter(t=>t.type==='entrada').reduce((s,t)=>s+t.amount,0),out=month.filter(t=>t.type==='gasto').reduce((s,t)=>s+t.amount,0);return `Relatório deste mês\nRecebimentos: ${money(inc)}\nGastos: ${money(out)}\nSaldo registrado: ${money(data.balance)}\nMovimentações no mês: ${month.length}`}
+function handle(raw){let s=raw.trim(),l=s.toLocaleLowerCase('pt-BR');if(!s)return;
+say(s,'user');
+if(/saldo|quanto tenho|quanto dinheiro/.test(l)){say(`Seu saldo registrado é ${money(data.balance)}. Isso considera apenas os lançamentos que você fez neste navegador.`);return}
+if(/relat[oó]rio|quanto gastei|resumo do m[eê]s/.test(l)){say(report());return}
+if(/hist[oó]rico|movimenta/.test(l)){say(data.transactions.length?data.transactions.slice(-10).reverse().map(t=>`${t.type==='gasto'?'Gasto':'Recebimento'}: ${money(t.amount)} · ${t.note} · ${new Date(t.date).toLocaleDateString('pt-BR')}`).join('\n'):'Ainda não há movimentações.');return}
+if(/d[ií]vida|contas pendentes/.test(l)){say(data.debts.length?data.debts.map((d,i)=>`${i+1}. ${d.note}: ${money(d.amount)}${d.due?' · vence '+d.due:''} · ${d.paid?'PAGA':'PENDENTE'}`).join('\n'):'Nenhuma dívida anotada ainda. Para registrar, escreva “anota dívida de 150 para dia 10”.');return}
+const dm=l.match(/(?:d[ií]vida|conta)\s+(?:de\s+)?r?\$?\s*(\d+(?:[.,]\d{1,2})?)[^\n]*(?:dia\s+(\d{1,2}))?/);
+if(dm){const amount=Number(dm[1].replace(',','.'));if(amount>0){data.debts.push({amount,note:s.replace(/anota|anotar|d[ií]vida|conta|de\s+r?\$?\s*\d+(?:[.,]\d{1,2})?/ig,'').trim()||'Dívida',due:dm[2]||'',paid:false});save();say(`Anotei uma dívida de ${money(amount)}. Você pode perguntar “mostrar minhas dívidas” para consultar.');` .replace(/'\);$/,''));return}}
+const num=l.match(/(?:r\$\s*)?(\d+(?:[.,]\d{1,2})?)/);
+const isExpense=/(gastei|paguei|comprei|despesa|gasto)/.test(l),isIncome=/(recebi|ganhei|sal[aá]rio|entrada)/.test(l);
+if(num&&(isExpense||isIncome)){const amount=Number(num[1].replace(',','.'));if(amount<=0){say('Me diga um valor maior que zero.');return}const type=isIncome?'entrada':'gasto',note=s.replace(num[0],'').replace(/gastei|paguei|comprei|despesa|gasto|recebi|ganhei|sal[aá]rio|entrada|r\$/ig,'').trim()|| (isIncome?'Recebimento':'Gasto');data.balance+=type==='entrada'?amount:-amount;data.transactions.push({type,amount,note,date:new Date().toISOString()});save();say(`Anotado! ${type==='entrada'?'Recebimento':'Gasto'} de ${money(amount)}${note?` (${note})`:''}.\nSaldo registrado: ${money(data.balance)}.`);return}
+if(/ajuda|o que posso|exemplos/.test(l)){say('Você pode escrever:\n• Gastei 30 no mercado\n• Recebi 200\n• Mostrar meu saldo\n• Mostrar relatório do mês\n• Mostrar minhas dívidas\n• Mostrar histórico\n\nImportante: ainda não sou uma IA conectada ao ChatGPT. Nesta versão, reconheço comandos simples e salvo os dados neste navegador.');return}
+say('Ainda não entendi esse pedido. Tente “gastei 30 no mercado”, “recebi 200”, “mostrar meu saldo” ou “mostrar relatório do mês”. A conversa com IA de verdade será adicionada numa próxima etapa.');
+}
+document.getElementById('form').addEventListener('submit',e=>{e.preventDefault();const v=input.value;input.value='';handle(v)});
+</script></body></html>
